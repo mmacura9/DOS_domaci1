@@ -20,16 +20,16 @@ import ipywidgets as widgets
 import numpy as np
 
 imgQueen = imread('queen_dress.jpg')
-# imgPutin = imread('putin.jpg')
+imgPutin = imread('putin.jpg')
 
 io.imshow(imgQueen)
-# io.imshow(imgPutin)
+io.imshow(imgPutin)
 
 imgQueenLab = color.rgb2lab(imgQueen)
 imgQueenLCh = color.lab2lch(imgQueenLab)
 
-# imgPutinLab = color.rgb2lab(imgPutin)
-# imgPutinLCh = color.lab2lch(imgPutinLab)
+imgPutinLab = color.rgb2lab(imgPutin)
+imgPutinLCh = color.lab2lch(imgPutinLab)
 
 fig, ax = plt.subplots(2, 2, figsize=(12,9), dpi=80);
 tight_layout();
@@ -45,11 +45,11 @@ mask = (imgQueenLCh[:,:,2]>downTreshold) & (imgQueenLCh[:,:,2]<upTreshold)
 
 
 print(imgQueenLCh.shape,mask.shape)
-# print(imgPutinLCh.shape)
+print(imgPutinLCh.shape)
 # print(mask)
 
 
-imgQueenLCh[mask,2]=0
+imgQueenLCh[mask,2]=1
 imgQueenLab = color.lch2lab(imgQueenLCh)
 imgQueen = color.lab2rgb(imgQueenLab)
 fig = plt.figure()
