@@ -41,16 +41,18 @@ def dressQueenLCH(rgbQueen: np.array, rgbImg: np.array) -> np.array:
     mask1 = mask
     
     mask = mask*1.
-    mask_gauss_41 = filters.gaussian(mask, sigma=10, truncate=4.1)
+    mask_gauss = filters.gaussian(mask, sigma=10, truncate=5)
     
     newH = np.ones(rgbQueen[:,:,0].shape)*LChimg[0,0,2]
     newH[416:832,200:616] = LChimg[:,:,2]
     
-    newL = np.ones(rgbQueen[:,:,0].shape)*LChimg[0,0,1]
-    newL[416:832,200:616] = LChimg[:,:,1]
+    newC = np.ones(rgbQueen[:,:,0].shape)*LChimg[0,0,1]
+    newC[416:832,200:616] = LChimg[:,:,1]
     
-    imgQueenLCh[mask1,2] = mask_gauss_41[mask1]*newH[mask1]
-    imgQueenLCh[mask1,1] = mask_gauss_41[mask1]*newL[mask1]
+    mask1 = mask_gauss>0.5
+    
+    imgQueenLCh[:,:,2] = mask1*newH + ~mask1*imgQueenLCh[:,:,2]
+    imgQueenLCh[:,:,1] = mask1*newC + ~mask1*imgQueenLCh[:,:,1]
     
     imgQueenLab = color.lch2lab(imgQueenLCh)
     imgQueenOutput = color.lab2rgb(imgQueenLab)
@@ -74,7 +76,7 @@ def dressQueenHSVGauss(rgbQueen: np.array, rgbImg: np.array) -> np.array:
     mask1 = mask
     
     mask = mask*1.
-    mask_gauss_40 = filters.gaussian(mask, sigma=10, truncate=4)
+    mask_gauss = filters.gaussian(mask, sigma=9, truncate=5)
     
     newH = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,0]
     newH[416:832,200:616] = imgHSV[:,:,0]
@@ -82,12 +84,15 @@ def dressQueenHSVGauss(rgbQueen: np.array, rgbImg: np.array) -> np.array:
     newS = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,1]
     newS[416:832,200:616] = imgHSV[:,:,1]
     
+    # newH[newH<0.5] = -1
     # newV = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,2]
     # newV[416:832,200:616] = imgHSV[:,:,2]
     
-    outputH = mask_gauss_40*newH
-    outputS = mask_gauss_40*newS
-    # outputV = mask_gauss_40*newV
+    mask1 = mask_gauss>0.5
+    
+    outputH = mask1*newH
+    outputS = mask1*newS
+    # outputV = mask_gauss*newV
     
     imgQueenHSV[mask1,0] = outputH[mask1]
     imgQueenHSV[mask1,1] = outputS[mask1]
@@ -114,7 +119,7 @@ def dressQueenHSVBox(rgbQueen: np.array, rgbImg: np.array) -> np.array:
     mask1 = mask
     
     mask = mask*1.
-    box_mask = np.ones([20,20], dtype=float)/400
+    box_mask = np.ones([30,30], dtype=float)/900
     box_mask = ndimage.correlate(mask, box_mask)
     
     newH = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,0]
@@ -123,8 +128,10 @@ def dressQueenHSVBox(rgbQueen: np.array, rgbImg: np.array) -> np.array:
     newS = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,1]
     newS[416:832,200:616] = imgHSV[:,:,1]
     
-    imgQueenHSV[mask1,0] = box_mask[mask1]*newH[mask1]
-    imgQueenHSV[mask1,1] = box_mask[mask1]*newS[mask1]
+    mask1 = box_mask>0.5
+    
+    imgQueenHSV[:,:,0] = mask1*newH + ~mask1*imgQueenHSV[:,:,0]
+    imgQueenHSV[:,:,1] = mask1*newS + ~mask1*imgQueenHSV[:,:,1]
     
     imgQueenOutput = color.hsv2rgb(imgQueenHSV)
     
@@ -141,3 +148,5 @@ if __name__=="__main__":
     # dressQueenLCH(imgQueen, imgRacism)
     
     dressQueenHSVGauss(imgQueen, imgRacism)
+    
+    # dressQueenHSVBox(imgQueen, imgRacism)
