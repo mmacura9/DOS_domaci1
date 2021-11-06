@@ -14,43 +14,130 @@ from skimage import exposure
 from skimage import filters
 from skimage import io
 
+from scipy import ndimage
+
 from ipywidgets import interact, interactive, fixed, interact_manual
 import ipywidgets as widgets
 
 import numpy as np
 
-imgQueen = imread('queen_dress.jpg')
-imgPutin = imread('putin.jpg')
+def dressQueenLCH(rgbQueen: np.array, rgbImg: np.array) -> np.array:
+    imgQueenLab = color.rgb2lab(rgbQueen)
+    imgQueenLCh = color.lab2lch(imgQueenLab)
+    
+    Labimg = color.rgb2lab(rgbImg)
+    LChimg = color.lab2lch(Labimg)
+    
+    fig, ax = plt.subplots(2, 2, figsize=(12,9), dpi=80);
+    tight_layout();
+    ax[0,0].imshow(rgbQueen); ax[0,0].set_title('RGB', fontsize=14);
+    ax[0,1].imshow(imgQueenLCh[:,:,0], vmin=np.min(imgQueenLCh[:,:,0]), vmax=np.max(imgQueenLCh[:,:,0]), cmap='gray'); ax[0,1].set_title('L', fontsize=14);
+    ax[1,0].imshow(imgQueenLCh[:,:,1], vmin=np.min(imgQueenLCh[:,:,1]), vmax=np.max(imgQueenLCh[:,:,1]), cmap='jet'); ax[1,0].set_title('C', fontsize=14);
+    ax[1,1].imshow(imgQueenLCh[:,:,2], vmin=0, vmax=2*pi, cmap='jet'); ax[1,1].set_title('h', fontsize=14);
+    
+    downTreshold = 3*pi/4
+    upTreshold = 5*pi/4
+    mask = (imgQueenLCh[:,:,2]>downTreshold) & (imgQueenLCh[:,:,2]<upTreshold)
+    mask1 = mask
+    
+    mask = mask*1.
+    mask_gauss_41 = filters.gaussian(mask, sigma=10, truncate=4.1)
+    
+    newH = np.ones(rgbQueen[:,:,0].shape)*LChimg[0,0,2]
+    newH[416:832,200:616] = LChimg[:,:,2]
+    
+    newL = np.ones(rgbQueen[:,:,0].shape)*LChimg[0,0,1]
+    newL[416:832,200:616] = LChimg[:,:,1]
+    
+    imgQueenLCh[mask1,2] = mask_gauss_41[mask1]*newH[mask1]
+    imgQueenLCh[mask1,1] = mask_gauss_41[mask1]*newL[mask1]
+    
+    imgQueenLab = color.lch2lab(imgQueenLCh)
+    imgQueenOutput = color.lab2rgb(imgQueenLab)
+    fig = plt.figure()
+    io.imshow(imgQueenOutput)
+    
+    return imgQueenOutput
 
-io.imshow(imgQueen)
-io.imshow(imgPutin)
+def dressQueenHSVGauss(rgbQueen: np.array, rgbImg: np.array) -> np.array:
+    imgQueenHSV = color.rgb2hsv(rgbQueen)
+    imgHSV = color.rgb2hsv(rgbImg)
+    
+    fig, ax = plt.subplots(2, 2, figsize=(12,9), dpi=80);
+    tight_layout();
+    ax[0,0].imshow(rgbQueen); ax[0,0].set_title('RGB', fontsize=14);
+    ax[0,1].imshow(imgQueenHSV[:,:,2], vmin=0, vmax=1, cmap='gray'); ax[0,1].set_title('V', fontsize=14);
+    ax[1,0].imshow(imgQueenHSV[:,:,1], vmin=0, vmax=1, cmap='jet'); ax[1,0].set_title('S', fontsize=14);
+    ax[1,1].imshow(imgQueenHSV[:,:,0], vmin=0, vmax=1, cmap='jet'); ax[1,1].set_title('H', fontsize=14);
+    
+    mask = (imgQueenHSV[:,:,0]>0.4) & (imgQueenHSV[:,:,0]<0.6)
+    mask1 = mask
+    
+    mask = mask*1.
+    mask_gauss_40 = filters.gaussian(mask, sigma=10, truncate=4)
+    
+    newH = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,0]
+    newH[416:832,200:616] = imgHSV[:,:,0]
+    
+    newS = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,1]
+    newS[416:832,200:616] = imgHSV[:,:,1]
+    
+    # newV = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,2]
+    # newV[416:832,200:616] = imgHSV[:,:,2]
+    
+    outputH = mask_gauss_40*newH
+    outputS = mask_gauss_40*newS
+    # outputV = mask_gauss_40*newV
+    
+    imgQueenHSV[mask1,0] = outputH[mask1]
+    imgQueenHSV[mask1,1] = outputS[mask1]
+    # imgQueenHSV[mask1,2] = outputV[mask1]
+    
+    imgQueenOutput = color.hsv2rgb(imgQueenHSV)
+    
+    plt.figure()
+    io.imshow(imgQueenOutput)
+    return imgQueenOutput
 
-imgQueenLab = color.rgb2lab(imgQueen)
-imgQueenLCh = color.lab2lch(imgQueenLab)
+def dressQueenHSVBox(rgbQueen: np.array, rgbImg: np.array) -> np.array:
+    imgQueenHSV = color.rgb2hsv(rgbQueen)
+    imgHSV = color.rgb2hsv(rgbImg)
+    
+    fig, ax = plt.subplots(2, 2, figsize=(12,9), dpi=80);
+    tight_layout();
+    ax[0,0].imshow(rgbQueen); ax[0,0].set_title('RGB', fontsize=14);
+    ax[0,1].imshow(imgQueenHSV[:,:,2], vmin=0, vmax=1, cmap='gray'); ax[0,1].set_title('V', fontsize=14);
+    ax[1,0].imshow(imgQueenHSV[:,:,1], vmin=0, vmax=1, cmap='jet'); ax[1,0].set_title('S', fontsize=14);
+    ax[1,1].imshow(imgQueenHSV[:,:,0], vmin=0, vmax=1, cmap='jet'); ax[1,1].set_title('H', fontsize=14);
+    
+    mask = (imgQueenHSV[:,:,0]>0.4) & (imgQueenHSV[:,:,0]<0.6)
+    mask1 = mask
+    
+    mask = mask*1.
+    box_mask = np.ones([20,20], dtype=float)/400
+    box_mask = ndimage.correlate(mask, box_mask)
+    
+    newH = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,0]
+    newH[416:832,200:616] = imgHSV[:,:,0]
+    
+    newS = np.ones(rgbQueen[:,:,0].shape)*imgHSV[0,0,1]
+    newS[416:832,200:616] = imgHSV[:,:,1]
+    
+    imgQueenHSV[mask1,0] = box_mask[mask1]*newH[mask1]
+    imgQueenHSV[mask1,1] = box_mask[mask1]*newS[mask1]
+    
+    imgQueenOutput = color.hsv2rgb(imgQueenHSV)
+    
+    plt.figure()
+    io.imshow(imgQueenOutput)
+    return imgQueenOutput
 
-imgPutinLab = color.rgb2lab(imgPutin)
-imgPutinLCh = color.lab2lch(imgPutinLab)
-
-fig, ax = plt.subplots(2, 2, figsize=(12,9), dpi=80);
-tight_layout();
-ax[0,0].imshow(imgQueen); ax[0,0].set_title('RGB', fontsize=14);
-ax[0,1].imshow(imgQueenLCh[:,:,0], vmin=np.min(imgQueenLCh[:,:,0]), vmax=np.max(imgQueenLCh[:,:,0]), cmap='gray'); ax[0,1].set_title('L', fontsize=14);
-ax[1,0].imshow(imgQueenLCh[:,:,1], vmin=np.min(imgQueenLCh[:,:,1]), vmax=np.max(imgQueenLCh[:,:,1]), cmap='jet'); ax[1,0].set_title('C', fontsize=14);
-ax[1,1].imshow(imgQueenLCh[:,:,2], vmin=0, vmax=2*pi, cmap='jet'); ax[1,1].set_title('h', fontsize=14);
-
-downTreshold = 3*pi/4
-upTreshold = 5*pi/4
-# mask = np.zeros(imgQueen.shape, dtype = bool)
-mask = (imgQueenLCh[:,:,2]>downTreshold) & (imgQueenLCh[:,:,2]<upTreshold)
-
-
-print(imgQueenLCh.shape,mask.shape)
-print(imgPutinLCh.shape)
-# print(mask)
-
-
-imgQueenLCh[mask,2]=1
-imgQueenLab = color.lch2lab(imgQueenLCh)
-imgQueen = color.lab2rgb(imgQueenLab)
-fig = plt.figure()
-io.imshow(imgQueen)
+if __name__=="__main__":
+    imgQueen = imread('queen_dress.jpg')
+    imgRacism = imread('noToRacism.jpg')
+    
+    io.imshow(imgQueen)
+    
+    # dressQueenLCH(imgQueen, imgRacism)
+    
+    dressQueenHSVGauss(imgQueen, imgRacism)
