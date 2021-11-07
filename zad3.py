@@ -106,8 +106,8 @@ def bilinearInterpolation(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, 
                 x2 = np.array([x20, x21, x22])
                 if blockX+pomX>=0 and (blockX+pomX)<numTiles[0]:
                     x30 = T[blockX+pomX,blockY+pomY,imgIn[i,j,0]-1,0]
-                    x31 = T[blockX+pomX,blockY+pomY,imgIn[i,j,0]-1,1]
-                    x32 = T[blockX+pomX,blockY+pomY,imgIn[i,j,0]-1,0]
+                    x31 = T[blockX+pomX,blockY+pomY,imgIn[i,j,1]-1,1]
+                    x32 = T[blockX+pomX,blockY+pomY,imgIn[i,j,2]-1,2]
                     x3 = np.array([x30, x31, x32])
             
             c = abs(j-centerY)
@@ -117,16 +117,13 @@ def bilinearInterpolation(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, 
                 c = 0
             
             sh10 = (T[blockX,blockY,imgIn[i,j,0]-1,0]*b + x1[0]*a)/(a+b)
-            sh20 = (x2[0]*b + x3[0]*a)/(a+b)
             
             sh11 = (T[blockX,blockY,imgIn[i,j,1]-1,1]*b + x1[1]*a)/(a+b)
-            sh21 = (x2[1]*b + x3[1]*a)/(a+b)
             
             sh12 = (T[blockX,blockY,imgIn[i,j,2]-1,2]*b + x1[2]*a)/(a+b)
-            sh22 = (x2[2]*b + x3[2]*a)/(a+b)
             
             sh1 = np.array([sh10, sh11, sh12])
-            sh2 = np.array([sh20, sh21, sh22])
+            sh2 = (x2*b+x3*a)/(a+b)
             
             imgOut[i,j,:] = np.round((sh1*d+sh2*c)/(c+d))
     
