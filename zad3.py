@@ -41,7 +41,7 @@ def makeMat(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.array
     mat = imgIn[i*sizeX:, j*sizeY:, :]
     con1 = imgIn[i*sizeX:, imgIn.shape[1]-(j+1)*sizeY:, :]
     mat = np.concatenate((mat, con1), axis = 1)
-    con2 = imgIn[imgIn.shape[0]-(i+1)*sizeX:, j*sizeY:, :]
+    con2 = mat[imgIn.shape[0]-(i+1)*sizeX:, :, :]
     return np.concatenate((mat, con2), axis = 0)
 
 def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.array:
