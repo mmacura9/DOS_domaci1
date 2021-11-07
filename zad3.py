@@ -23,7 +23,7 @@ def makeHist3D(imgIn: np.array) -> np.array:
         numHist[i,0]=np.sum(imgIn[:,:,0]==i)
         numHist[i,1]=np.sum(imgIn[:,:,1]==i)
         numHist[i,2]=np.sum(imgIn[:,:,2]==i)
-    return numHist/imgIn.size
+    return numHist/imgIn[:,:,0].size
 
 def makeMat3D(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.array:
     if (i+1)*sizeX <= imgIn.shape[0] and (j+1)*sizeY <= imgIn.shape[1]:
@@ -60,10 +60,11 @@ def makeMat2D(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.arr
     return np.concatenate((mat, con2), axis = 0)
 
 def makeT(histogram: np.array, limit: float) -> np.array:
+    T1 = sum(histogram[histogram>limit])-sum(histogram>limit)*limit
+    histogram[histogram>limit] = limit
+    histogram = histogram + T1/255
     T = np.cumsum(histogram)
-    T1 = np.zeros(T.shape)
-    T1 = sum(T[T>limit]-limit)
-    T = T*255+T1
+    T = T*255
     return T
 
 def sgn(x: int) -> int:
@@ -86,33 +87,19 @@ def bilinearInterpolation(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, 
             a = abs(i-centerX)
             b = abs(i-(centerX+pomX*sizeX))
             
+            x1 = np.array([0, 0, 0])
+            x2 = np.array([0, 0, 0])
+            x3 = np.array([0, 0, 0])
+            
             if blockX+pomX<0 or (blockX+pomX)>=numTiles[0]:
-                x10 = T[blockX,blockY,imgIn[i,j,0]-1,0]
-                x11 = T[blockX,blockY,imgIn[i,j,1]-1,1]
-                x12 = T[blockX,blockY,imgIn[i,j,2]-1,2]
-                x1 = np.array([x10, x11, x12])
+                a = 0
             else:
                 x10 = T[blockX+pomX,blockY,imgIn[i,j,0]-1,0]
                 x11 = T[blockX+pomX,blockY,imgIn[i,j,1]-1,1]
                 x12 = T[blockX+pomX,blockY,imgIn[i,j,2]-1,2]
                 x1 = np.array([x10, x11, x12])
             
-            if blockY+pomY<0 or (blockY+pomY)>=numTiles[1]:
-                x20 = T[blockX,blockY,imgIn[i,j,0]-1,0]
-                x21 = T[blockX,blockY,imgIn[i,j,1]-1,1]
-                x22 = T[blockX,blockY,imgIn[i,j,2]-1,2]
-                x2 = np.array([x20, x21, x22])
-                if blockX+pomX<0 or (blockX+pomX)>=numTiles[0]:
-                    x30 = T[blockX,blockY,imgIn[i,j,0]-1,0]
-                    x31 = T[blockX,blockY,imgIn[i,j,0]-1,1]
-                    x32 = T[blockX,blockY,imgIn[i,j,0]-1,0]
-                    x3 = np.array([x30, x31, x32])
-                else:
-                    x30 = T[blockX+pomX,blockY,imgIn[i,j,0]-1,0]
-                    x31 = T[blockX+pomX,blockY,imgIn[i,j,0]-1,1]
-                    x32 = T[blockX+pomX,blockY,imgIn[i,j,0]-1,0]
-                    x3 = np.array([x30, x31, x32])
-            else:
+            if blockY+pomY>=0 and (blockY+pomY)<numTiles[1]:
                 x20 = T[blockX,blockY+pomY,imgIn[i,j,0]-1,0]
                 x21 = T[blockX,blockY+pomY,imgIn[i,j,1]-1,1]
                 x22 = T[blockX,blockY+pomY,imgIn[i,j,2]-1,2]
@@ -122,11 +109,12 @@ def bilinearInterpolation(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, 
                     x31 = T[blockX+pomX,blockY+pomY,imgIn[i,j,0]-1,1]
                     x32 = T[blockX+pomX,blockY+pomY,imgIn[i,j,0]-1,0]
                     x3 = np.array([x30, x31, x32])
-                else:
-                    x30 = T[blockX,blockY+pomY,imgIn[i,j,0]-1,0]
-                    x31 = T[blockX,blockY+pomY,imgIn[i,j,0]-1,1]
-                    x32 = T[blockX,blockY+pomY,imgIn[i,j,0]-1,0]
-                    x3 = np.array([x30, x31, x32])
+            
+            c = abs(j-centerY)
+            d = abs(j-(centerY+pomY*sizeY))
+            
+            if blockY+pomY<0 or (blockY+pomY)>=numTiles[1]:
+                c = 0
             
             sh10 = (T[blockX,blockY,imgIn[i,j,0]-1,0]*b + x1[0]*a)/(a+b)
             sh20 = (x2[0]*b + x3[0]*a)/(a+b)
@@ -139,9 +127,6 @@ def bilinearInterpolation(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, 
             
             sh1 = np.array([sh10, sh11, sh12])
             sh2 = np.array([sh20, sh21, sh22])
-            
-            c = abs(j-centerY)
-            d = abs(j-(centerY+pomY*sizeY))
             
             imgOut[i,j,:] = np.round((sh1*d+sh2*c)/(c+d))
     
