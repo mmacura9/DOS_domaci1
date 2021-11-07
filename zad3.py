@@ -12,20 +12,18 @@ import matplotlib.pyplot as plt
 import math
 
 def makeHist2D(imgIn: np.array) -> np.array:
-    # print("Pravim histogram")
     numHist = np.zeros(255, dtype = int)
     for i in range(0, 255):
-        numHist[i] = np.sum((imgIn <= i) & (imgIn > i-1))
-    return numHist
+        numHist[i] = np.sum(imgIn == i)
+    return numHist/imgIn.size
 
 def makeHist3D(imgIn: np.array) -> np.array:
     numHist = np.zeros([255,3], dtype = int)
-    # print(numHist.shape)
     for i in range(0, 255):
-        numHist[i,0]=np.sum((imgIn[:,:,0]>=i) & (imgIn[:,:,0]<i+1))
-        numHist[i,1]=np.sum((imgIn[:,:,1]>=i) & (imgIn[:,:,1]<i+1))
-        numHist[i,2]=np.sum((imgIn[:,:,2]>=i) & (imgIn[:,:,2]<i+1))
-    return numHist/np.size(imgIn[:,:,0])
+        numHist[i,0]=np.sum(imgIn[:,:,0]==i)
+        numHist[i,1]=np.sum(imgIn[:,:,1]==i)
+        numHist[i,2]=np.sum(imgIn[:,:,2]==i)
+    return numHist/imgIn.size
 
 def makeMat3D(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.array:
     if (i+1)*sizeX <= imgIn.shape[0] and (j+1)*sizeY <= imgIn.shape[1]:
@@ -61,26 +59,37 @@ def makeMat2D(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.arr
     con2 = mat[imgIn.shape[0]-(i+1)*sizeX:, :]
     return np.concatenate((mat, con2), axis = 0)
 
+def makeT(histogram: np.array, limit: float) -> np.array:
+    T = np.cumsum(histogram)
+    T[T>limit] = limit
+    T = T+limit
+    T = T*255
+    return T
+
 def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.array:
     x = np.linspace(0,255,255)
     sizeX = math.ceil(imgIn.shape[0]/numTiles[0])
     sizeY = math.ceil(imgIn.shape[1]/numTiles[1])
     if imgIn.shape[2] == 2:
         print("2D Slika")
-        # histogram = makeHist2D(imgIn)
-        histogram = np.zeros([numTiles[0],numTiles[1],255])
+        T = np.zeros([numTiles[0], numTiles[1], 255])
+        histogram = np.zeros(255)
         for i in range(numTiles[0]):
             for j in range(numTiles[1]):
                 mat = makeMat2D(imgIn, sizeX, sizeY, i, j)
-                histogram[i,j,:] = makeHist2D(mat)
+                histogram = makeHist2D(mat)
+                T[i,j,:] = makeT(histogram, limit)
     else:
         print("3D Slika")
-        # print(makeHist3D(imgIn))
-        histogram = np.zeros([numTiles[0],numTiles[1],255,3])
+        T = np.zeros([numTiles[0],numTiles[1],255,3])
+        histogram = np.zeros([255, 3])
         for i in range(numTiles[0]):
             for j in range(numTiles[1]):
                 mat = makeMat3D(imgIn, sizeX, sizeY, i, j)
-                histogram[i,j,:,:] = makeHist3D(mat)
+                histogram = makeHist3D(mat)
+                T[i, j, :, 0] = makeT(histogram[:, 0], limit)
+                T[i, j, :, 1] = makeT(histogram[:, 1], limit)
+                T[i, j, :, 2] = makeT(histogram[:, 2], limit)
         
 
 imgIn = imread('train.jpg')
