@@ -10,14 +10,42 @@ from skimage import color
 from skimage import io
 import matplotlib.pyplot as plt
 import math
+from skimage import *
+import os
 
 def makeHist2D(imgIn: np.array) -> np.array:
+    """
+
+    Parameters
+    ----------
+    imgIn : np.array
+        Input image- gray scale.
+
+    Returns
+    -------
+    np.array
+        Histogram of the gray scale image.
+
+    """
     numHist = np.zeros(256, dtype = int)
     for i in range(0, 256):
         numHist[i] = np.sum(imgIn == i)
     return numHist/imgIn.size
 
 def makeHist3D(imgIn: np.array) -> np.array:
+    """
+
+    Parameters
+    ----------
+    imgIn : np.array
+        Input image- rgb.
+
+    Returns
+    -------
+    np.array
+        Return 3 histograms for each component of rgb image.
+
+    """
     numHist = np.zeros([256,3], dtype = int)
     for i in range(0, 256):
         numHist[i,0]=np.sum(imgIn[:,:,0]==i)
@@ -72,7 +100,7 @@ def sgn(x: int) -> int:
         return -1
     return 1
 
-def bilinearInterpolation(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, numTiles: []) -> np.array:
+def bilinearInterpolation3D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, numTiles: []) -> np.array:
     imgOut = np.zeros(imgIn.shape, dtype = uint8)
     for i in range(imgIn.shape[0]):
         for j in range(imgIn.shape[1]):
@@ -129,10 +157,52 @@ def bilinearInterpolation(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, 
     
     return imgOut
 
+def bilinearInterpolation2D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, numTiles: []) -> np.array:
+    imgOut = np.zeros(imgIn.shape, dtype = uint8)
+    for i in range(imgIn.shape[0]):
+        for j in range(imgIn.shape[1]):
+            blockX = math.floor(i/sizeX)
+            blockY = math.floor(j/sizeY)
+            
+            centerX = sizeX/2 + blockX*sizeX
+            centerY = sizeY/2 + blockY*sizeY
+            pomX = sgn(i-centerX)
+            pomY = sgn(j-centerY)
+            
+            a = abs(i-centerX)
+            b = abs(i-(centerX+pomX*sizeX))
+            
+            x1 = 0
+            x2 = 0
+            x3 = 0
+            
+            if blockX+pomX<0 or (blockX+pomX)>=numTiles[0]:
+                a = 0
+            else:
+                x1 = T[blockX+pomX,blockY,imgIn[i,j]]
+            
+            if blockY+pomY>=0 and (blockY+pomY)<numTiles[1]:
+                x2 = T[blockX,blockY+pomY,imgIn[i,j]]
+                if blockX+pomX>=0 and (blockX+pomX)<numTiles[0]:
+                    x3 = T[blockX+pomX,blockY+pomY,imgIn[i,j]]
+            
+            c = abs(j-centerY)
+            d = abs(j-(centerY+pomY*sizeY))
+            
+            if blockY+pomY<0 or (blockY+pomY)>=numTiles[1]:
+                c = 0
+            
+            sh1 = (T[blockX,blockY,imgIn[i,j]]*b + x1*a)/(a+b)
+            sh2 = (x2*b+x3*a)/(a+b)
+            
+            imgOut[i,j] = np.round((sh1*d+sh2*c)/(c+d))
+    
+    return imgOut
+
 def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.array:
     sizeX = math.ceil(imgIn.shape[0]/numTiles[0])
     sizeY = math.ceil(imgIn.shape[1]/numTiles[1])
-    if imgIn.shape[2] == 3:
+    if len(imgIn.shape) == 3:
         print("3D Slika")
         T = np.zeros([numTiles[0],numTiles[1],256,3])
         for i in range(numTiles[0]):
@@ -142,20 +212,25 @@ def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.
                 T[i, j, :, 0] = makeT(histogram[:, 0], limit)
                 T[i, j, :, 1] = makeT(histogram[:, 1], limit)
                 T[i, j, :, 2] = makeT(histogram[:, 2], limit)
+        return bilinearInterpolation3D(imgIn, T, sizeX, sizeY, numTiles)
     else:
         print("2D Slika")
-        T = np.zeros([numTiles[0], numTiles[1], 255])
+        T = np.zeros([numTiles[0], numTiles[1], 256])
         for i in range(numTiles[0]):
             for j in range(numTiles[1]):
                 mat = makeMat2D(imgIn, sizeX, sizeY, i, j)
                 histogram = makeHist2D(mat)
                 T[i,j,:] = makeT(histogram, limit)
-    return bilinearInterpolation(imgIn, T, sizeX, sizeY, numTiles)
+        return bilinearInterpolation2D(imgIn, T, sizeX, sizeY, numTiles)
                 
 if __name__ == "__main__":
     imgIn = imread('train.jpg')
+    img1 = color.rgb2yuv(imgIn)
     plt.figure()
-    io.imshow(imgIn)
+    io.imshow(img_as_ubyte(img1[:,:,0]))
+    # plt.figure()
+    # io.imshow(dosCLAHE(imgIn))
     plt.figure()
-    io.imshow(dosCLAHE(imgIn))
+    io.imshow(dosCLAHE(img_as_ubyte(img1[:,:,0])))
+
     
