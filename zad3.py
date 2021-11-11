@@ -54,6 +54,27 @@ def makeHist3D(imgIn: np.array) -> np.array:
     return numHist/imgIn[:,:,0].size
 
 def makeMat3D(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.array:
+    """
+    
+
+    Parameters
+    ----------
+    imgIn : np.array
+        Input rgb image.
+    sizeX : int
+        Size of x coordinate of the tile.
+    sizeY : int
+        Size of y coordinate of the tile.
+    i : int
+        index.
+    j : int
+        index.
+    Returns
+    -------
+    arr : np.array
+        Returns the (i, j) piece of input image
+
+    """
     if (i+1)*sizeX <= imgIn.shape[0] and (j+1)*sizeY <= imgIn.shape[1]:
         return imgIn[i*sizeX:(i+1)*sizeX, j*sizeY:(j+1)*sizeY, :]
     if (i+1)*sizeX > imgIn.shape[0] and (j+1)*sizeY <= imgIn.shape[1]:
@@ -71,6 +92,27 @@ def makeMat3D(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.arr
     return np.concatenate((mat, con2), axis = 0)
 
 def makeMat2D(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.array:
+    """
+    
+
+    Parameters
+    ----------
+    imgIn : np.array
+        Input gray-scale image.
+    sizeX : int
+        Size of x coordinate of the tile.
+    sizeY : int
+        Size of y coordinate of the tile.
+    i : int
+        index.
+    j : int
+        index.
+    Returns
+    -------
+    arr : np.array
+        Returns the (i, j) piece of input image
+
+    """
     if (i+1)*sizeX <= imgIn.shape[0] and (j+1)*sizeY <= imgIn.shape[1]:
         return imgIn[i*sizeX:(i+1)*sizeX, j*sizeY:(j+1)*sizeY]
     if (i+1)*sizeX > imgIn.shape[0] and (j+1)*sizeY <= imgIn.shape[1]:
@@ -88,6 +130,22 @@ def makeMat2D(imgIn: np.array, sizeX: int, sizeY: int, i: int, j: int) -> np.arr
     return np.concatenate((mat, con2), axis = 0)
 
 def makeT(histogram: np.array, limit: float) -> np.array:
+    """
+    
+
+    Parameters
+    ----------
+    histogram : np.array
+        Values of histogram.
+    limit : float
+        Limit for histogram.
+
+    Returns
+    -------
+    T : np.array
+        Returns the distribution function and limits the histogram.
+
+    """
     T1 = sum(histogram[histogram>limit])-sum(histogram>limit)*limit
     histogram[histogram>limit] = limit
     histogram = histogram + T1/255
@@ -101,6 +159,28 @@ def sgn(x: int) -> int:
     return 1
 
 def bilinearInterpolation3D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, numTiles: []) -> np.array:
+    """
+    
+
+    Parameters
+    ----------
+    imgIn : np.array
+        Input rgb image.
+    T : np.array
+        Matrix of distribution functions for each tile.
+    sizeX : int
+        Number of pixcels in x coordinate for each tile.
+    sizeY : int
+        Number of pixcels in y coordinate for each tile.
+    numTiles : []
+        Number of tiles.
+
+    Returns
+    -------
+    imgOut : np.array
+        Calculates values of each pixcel using bilinear interpolation.
+
+    """
     imgOut = np.zeros(imgIn.shape, dtype = uint8)
     for i in range(imgIn.shape[0]):
         for j in range(imgIn.shape[1]):
@@ -158,6 +238,28 @@ def bilinearInterpolation3D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int
     return imgOut
 
 def bilinearInterpolation2D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int, numTiles: []) -> np.array:
+    """
+    
+
+    Parameters
+    ----------
+    imgIn : np.array
+        Input gray-scale image.
+    T : np.array
+        Matrix of distribution functions for each tile.
+    sizeX : int
+        Number of pixcels in x coordinate for each tile.
+    sizeY : int
+        Number of pixcels in y coordinate for each tile.
+    numTiles : []
+        Number of tiles.
+
+    Returns
+    -------
+    imgOut : np.array
+        Calculates values of each pixcel using bilinear interpolation.
+
+    """
     imgOut = np.zeros(imgIn.shape, dtype = uint8)
     for i in range(imgIn.shape[0]):
         for j in range(imgIn.shape[1]):
@@ -200,6 +302,24 @@ def bilinearInterpolation2D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int
     return imgOut
 
 def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.array:
+    """
+    
+
+    Parameters
+    ----------
+    imgIn : np.array
+        Input image.
+    numTiles : [], optional
+        Number of tiles. The default is [8, 8].
+    limit : float, optional
+        Clip limit for histogram values. The default is 0.01.
+
+    Returns
+    -------
+    TYPE
+        Returns tha image processed by CLAHE algorithm.
+
+    """
     sizeX = math.ceil(imgIn.shape[0]/numTiles[0])
     sizeY = math.ceil(imgIn.shape[1]/numTiles[1])
     if len(imgIn.shape) == 3:
@@ -227,10 +347,10 @@ if __name__ == "__main__":
     imgIn = imread('train.jpg')
     img1 = color.rgb2yuv(imgIn)
     plt.figure()
-    io.imshow(img_as_ubyte(img1[:,:,0]))
-    # plt.figure()
-    # io.imshow(dosCLAHE(imgIn))
+    io.imshow(imgIn)
     plt.figure()
-    io.imshow(dosCLAHE(img_as_ubyte(img1[:,:,0])))
+    io.imshow(dosCLAHE(imgIn,[16, 16], 0.01))
+    # plt.figure()
+    # io.imshow(dosCLAHE(img_as_ubyte(img1[:,:,0])))
 
     

@@ -37,7 +37,7 @@ def dressQueenHSVGauss(rgbQueen: np.array, yuvImg: np.array) -> np.array:
     # ax[1,0].imshow(imgQueenHSV[:,:,1], vmin=0, vmax=1, cmap='jet'); ax[1,0].set_title('S', fontsize=14);
     # ax[1,1].imshow(imgQueenHSV[:,:,0], vmin=0, vmax=1, cmap='jet'); ax[1,1].set_title('H', fontsize=14);
     
-    mask = (imgQueenHSV[:,:,0]>0.2) & (imgQueenHSV[:,:,0]<0.5) & (imgQueenHSV[:,:,1]>0.4)
+    mask = (imgQueenHSV[:,:,0]>0.2) & (imgQueenHSV[:,:,0]<0.5) & (imgQueenHSV[:,:,1]>0.7)
     
     mask = mask*imgQueenHSV[:,:,1]
     mask_gauss = filters.gaussian(mask, sigma=10, truncate=0.1)
