@@ -167,13 +167,13 @@ def makeT(histogram: np.array, limit: float) -> np.array:
     # calculating the distribution function
     T = np.cumsum(histogram)
     # scaling the distribution function
-    T = T*256
+    T = T*255
     return np.floor(T)
 
 
 def sgn(x: int) -> int:
     """
-    
+
 
     Parameters
     ----------
@@ -227,10 +227,10 @@ def bilinearInterpolation3D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int
             # finding other tiles for bilinear interpolation
             pomX = sgn(i-centerX)
             pomY = sgn(j-centerY)
-            #finding the weights a and b
+            # finding the weights a and b
             a = abs(i-centerX)
             b = abs(i-(centerX+pomX*sizeX))
-            
+
             x1 = np.array([0, 0, 0])
             x2 = np.array([0, 0, 0])
             x3 = np.array([0, 0, 0])
@@ -256,7 +256,7 @@ def bilinearInterpolation3D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int
 
             c = abs(j-centerY)
             d = abs(j-(centerY+pomY*sizeY))
-            
+
             if blockY+pomY < 0 or (blockY+pomY) >= numTiles[1]:
                 c = 0
             # calculating the r, g and b component of the auxiliary pixcels
@@ -310,7 +310,7 @@ def bilinearInterpolation2D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int
             # finding other tiles for bilinear interpolation
             pomX = sgn(i-centerX)
             pomY = sgn(j-centerY)
-            #finding the weights a and b
+            # finding the weights a and b
             x1 = 0
             x2 = 0
             x3 = 0
@@ -361,6 +361,15 @@ def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.
     # calculating the size of each tile
     sizeX = math.ceil(imgIn.shape[0]/numTiles[0])
     sizeY = math.ceil(imgIn.shape[1]/numTiles[1])
+    # exceptions
+    if limit <= 0:
+        print("Greska sa limitom.")
+        return
+
+    if len(numTiles) > 2 or numTiles[0] <= 0 or numTiles[1] <= 0 or type(numTiles[0]) is not int or type(numTiles[1]) is not int:
+        print("Greska sa blokovima.")
+        return
+
     # enters the if if the image is rgb, otherwise it is gray scale
     if len(imgIn.shape) == 3:
         T = np.zeros([numTiles[0], numTiles[1], 256, 3])
@@ -387,14 +396,16 @@ def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.
 
 if __name__ == "__main__":
     imgIn = imread('train.jpg')
-    img1 = color.rgb2yuv(imgIn)
+    # img1 = color.rgb2yuv(imgIn)
     plt.figure()
     io.imshow(imgIn)
     start_time = time.time()
-    plt.figure()
-    io.imshow(dosCLAHE(imgIn, [2, 2], 0.01))
+    imgOut = dosCLAHE(imgIn, [5, 1])
     end_time = time.time()
     execution_time = end_time - start_time
+    if type(imgOut) is np.ndarray:
+        plt.figure()
+        io.imshow(imgOut)
     print("Vreme izvrsavanja: " + str(round(execution_time, 3)) + "s \n")
     # plt.figure()
     # io.imshow(dosCLAHE(img_as_ubyte(img1[:,:,0])))
