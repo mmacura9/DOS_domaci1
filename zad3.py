@@ -161,7 +161,7 @@ def makeT(histogram: np.array, limit: float) -> np.array:
 
     """
     # limiting the histogram
-    T1 = sum(histogram[histogram > limit])-sum(histogram > limit)*limit
+    T1 = np.sum(histogram[histogram > limit])-np.sum(histogram > limit)*limit
     histogram[histogram > limit] = limit
     histogram = histogram + T1/256
     # calculating the distribution function
@@ -311,6 +311,9 @@ def bilinearInterpolation2D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int
             pomX = sgn(i-centerX)
             pomY = sgn(j-centerY)
             # finding the weights a and b
+            a = abs(i-centerX)
+            b = abs(i-(centerX+pomX*sizeX))
+            
             x1 = 0
             x2 = 0
             x3 = 0
@@ -396,16 +399,16 @@ def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.
 
 if __name__ == "__main__":
     imgIn = imread('train.jpg')
-    # img1 = color.rgb2yuv(imgIn)
+    img1 = color.rgb2yuv(imgIn)
     plt.figure()
     io.imshow(imgIn)
     start_time = time.time()
-    imgOut = dosCLAHE(imgIn, [5, 1])
+    imgOut = dosCLAHE(imgIn, [8, 8])
     end_time = time.time()
     execution_time = end_time - start_time
     if type(imgOut) is np.ndarray:
         plt.figure()
         io.imshow(imgOut)
     print("Vreme izvrsavanja: " + str(round(execution_time, 3)) + "s \n")
-    # plt.figure()
-    # io.imshow(dosCLAHE(img_as_ubyte(img1[:,:,0])))
+    plt.figure()
+    io.imshow(dosCLAHE(img_as_ubyte(img1[:,:,0])))
