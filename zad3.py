@@ -313,7 +313,7 @@ def bilinearInterpolation2D(imgIn: np.array, T: np.array, sizeX: int, sizeY: int
             # finding the weights a and b
             a = abs(i-centerX)
             b = abs(i-(centerX+pomX*sizeX))
-            
+
             x1 = 0
             x2 = 0
             x3 = 0
@@ -399,7 +399,7 @@ def dosCLAHE(imgIn: np.array, numTiles: [] = [8, 8], limit: float = 0.01) -> np.
 
 if __name__ == "__main__":
     imgIn = imread('train.jpg')
-    img1 = color.rgb2yuv(imgIn)
+    img1 = color.rgb2gray(imgIn)
     plt.figure()
     io.imshow(imgIn)
     start_time = time.time()
@@ -411,4 +411,8 @@ if __name__ == "__main__":
         io.imshow(imgOut)
     print("Vreme izvrsavanja: " + str(round(execution_time, 3)) + "s \n")
     plt.figure()
-    io.imshow(dosCLAHE(img_as_ubyte(img1[:,:,0])))
+    io.imshow(dosCLAHE(img_as_ubyte(img1)))
+    
+    imgFakeCLAHE = exposure.equalize_adapthist(imgIn, [imgIn.shape[0]/8, imgIn.shape[1]/8], clip_limit=0.01, nbins=256)
+    plt.figure()
+    io.imshow(imgFakeCLAHE)
